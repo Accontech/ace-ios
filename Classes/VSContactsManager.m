@@ -63,12 +63,6 @@
     //[self createFriendListWithAllContacts:allContacts];
     [self createListWithAllContacts:allContacts];
     
-    LinphoneFriendList *friendList = linphone_core_get_default_friend_list([LinphoneManager getLc]);
-    const MSList* friends = linphone_friend_list_get_friends(friendList);
-    if (ms_list_size(friends) <= 0) {
-        return @"";
-    }
-    
     NSString *exportedContactsFilePath = [[self documentsDirectoryPath] stringByAppendingString:[NSString stringWithFormat:@"/%@%@.vcard", @"ACE_", @"Contacts"]];
     LinphoneFriendList *defaultFriendList = linphone_core_get_default_friend_list([LinphoneManager getLc]);
     linphone_friend_list_export_friends_as_vcard4_file(defaultFriendList, [exportedContactsFilePath UTF8String]);
@@ -77,7 +71,7 @@
 }
 
 -(void)createListWithAllContacts:(CFArrayRef)allContacts{
-    ABAddressBookRef addressBook = ABAddressBookCreate( );
+    ABAddressBookRef addressBook = ABAddressBookCreate();
     CFIndex nPeople = ABAddressBookGetPersonCount(addressBook);
 
     for ( int i = 0; i < nPeople; i++ ) {
@@ -85,9 +79,18 @@
         NSMutableArray *phoneNumbers = [self contactPhoneNumbersFrom:ref];
         NSMutableArray *sipURIs = [self contactSipURIsFrom:ref];
         NSString *contactNameSurnameOrg = [self contactNameSurnameOrganizationFrom:ref];
-        LinphoneFriend *friend = [self createFriendFromName:contactNameSurnameOrg withPhoneNumbers:phoneNumbers andSipURIs:sipURIs];
+        
+        if(sipURIs.count == 0){
+
+        }else{
+            LinphoneFriend *friend = [self createFriendFromName:contactNameSurnameOrg withPhoneNumbers:phoneNumbers andSipURIs:sipURIs];
 #pragma unused(friend)
+        }
     }
+}
+
+-(void)errorMessage{
+    NSLog(@"No phone number or sip adress");
 }
 
 - (NSString*)documentsDirectoryPath {
@@ -238,21 +241,21 @@
 
 - (LinphoneFriend*)createFriendFromName:(NSString*)name withPhoneNumbers:(NSMutableArray*)phoneNumbers andSipURIs:(NSMutableArray*)sipURIs {
     
-    LinphoneFriend *newFriend = linphone_friend_new_with_addr([[sipURIs objectAtIndex:0] UTF8String]);
-    linphone_friend_edit(newFriend);
+    LinphoneFriend *newFriend = linphone_core_create_friend([LinphoneManager getLc]);
     linphone_friend_set_name(newFriend, [name UTF8String]);
+    
+    for (int i = 0; i < sipURIs.count; ++i) {
+        const LinphoneAddress *addr = linphone_core_create_address([LinphoneManager getLc], [sipURIs[i] UTF8String]);
+            linphone_friend_set_address(newFriend, addr);
+            linphone_friend_add_address(newFriend, addr);
+    }
     
     for (int i = 0; i < phoneNumbers.count; ++i) {
         linphone_friend_add_phone_number(newFriend, [phoneNumbers[i] UTF8String]);
     }
     
-    for (int i = 0; i < sipURIs.count; ++i) {
-        const LinphoneAddress *addr = linphone_core_create_address([LinphoneManager getLc], [sipURIs[i] UTF8String]);
-        linphone_friend_add_address(newFriend, addr);
-    }
-    
-    linphone_friend_done(newFriend);
-    linphone_core_add_friend([LinphoneManager getLc], newFriend);
+    LinphoneFriendList *friendList = linphone_core_get_default_friend_list([LinphoneManager getLc]);
+    linphone_friend_list_add_friend(friendList, newFriend);
     
     return newFriend;
 }
