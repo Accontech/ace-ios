@@ -54,6 +54,23 @@
     return exportedContactFilePath;
 }
 
+-(NSString*)checkContactHasSipURI{
+    ABAddressBookRef addressBook = ABAddressBookCreate( );
+    CFArrayRef allContacts = ABAddressBookCopyArrayOfAllPeople(addressBook);
+    CFIndex nPeople = ABAddressBookGetPersonCount(addressBook);
+    
+    for ( int i = 0; i < nPeople; i++ ) {
+        ABRecordRef ref = CFArrayGetValueAtIndex(allContacts, i);
+        NSMutableArray *sipURIs = [self contactSipURIsFrom:ref];
+        
+        if (sipURIs.count > 0) {
+            NSString *exportedContactsFilePath = [self exportAllContacts];
+            return  exportedContactsFilePath;
+        }
+    }
+    return @"";
+}
+
 - (NSString*)exportAllContacts {
     
     ABAddressBookRef addressBook = ABAddressBookCreate( );
@@ -73,18 +90,16 @@
 -(void)createListWithAllContacts:(CFArrayRef)allContacts{
     ABAddressBookRef addressBook = ABAddressBookCreate();
     CFIndex nPeople = ABAddressBookGetPersonCount(addressBook);
-
+    
     for ( int i = 0; i < nPeople; i++ ) {
         ABRecordRef ref = CFArrayGetValueAtIndex(allContacts, i);
         NSMutableArray *phoneNumbers = [self contactPhoneNumbersFrom:ref];
         NSMutableArray *sipURIs = [self contactSipURIsFrom:ref];
         NSString *contactNameSurnameOrg = [self contactNameSurnameOrganizationFrom:ref];
         
-        if(sipURIs.count == 0){
-
-        }else{
+        if (sipURIs.count > 0) {
             LinphoneFriend *friend = [self createFriendFromName:contactNameSurnameOrg withPhoneNumbers:phoneNumbers andSipURIs:sipURIs];
-#pragma unused(friend)
+            #pragma unused(friend)
         }
     }
 }

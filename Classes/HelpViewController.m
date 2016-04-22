@@ -200,7 +200,7 @@ static UICompositeViewDescription *compositeDescription = nil;
                          style:UIAlertActionStyleDefault
                          handler:^(UIAlertAction * action)
                          {
-                             NSString *exportedContactsFilePath = [[VSContactsManager sharedInstance] exportAllContacts];
+                             NSString *exportedContactsFilePath = [[VSContactsManager sharedInstance] checkContactHasSipURI];
                              
                              if ([exportedContactsFilePath isEqualToString:@""]) {
                                  UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Error"

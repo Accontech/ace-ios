@@ -19,6 +19,7 @@
 - (NSString*)exportContact:(ABRecordRef)abRecord;
 - (LinphoneFriend*)createFriendFromContactBySipURI:(ABRecordRef)abRecord;
 - (NSString*)exportAllContacts;
+-(NSString*)checkContactHasSipURI;
 - (int)addressBookContactsCount;
 
 @end
